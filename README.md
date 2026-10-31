@@ -1,0 +1,2 @@
+# Adi-s_assignments_wis_python_course_2026
+Assignments
