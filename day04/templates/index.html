@@ -1,0 +1,283 @@
+{#
+  templates/index.html
+  The web page of the Metropolis app (day04).
+
+  This file is a TEMPLATE: an HTML page with gaps. Flask (through its
+  template language, Jinja) fills the gaps with values from app.py and sends
+  the finished page to the browser. Three kinds of special marks are used:
+
+    {{ ... }}   print a value here                      e.g. {{ result.n }}
+    {% ... %}   logic: if / elif / else / for            e.g. {% if error %}
+    curly bracket + hash   a comment, like this one (see how this block
+                opens and closes). It is removed before the page is sent, so
+                visitors never see it, not even in "view source".
+
+  The values come from the last line of index() in app.py:
+    form        the text in the five input boxes
+    result      the results of a run, or None before the first run
+    error       an error message, or None
+    max_steps, max_n, max_q, max_starts   the limits, to show in the labels
+
+  HTML in one sentence: the page is made of "tags" such as <p> ... </p>,
+  where <p> opens a paragraph and </p> closes it.
+#}
+{# Tells the browser that this is a modern HTML page. Always the first line. #}
+<!DOCTYPE html>
+{# The whole page sits inside <html>. lang="en" says the text is in English. #}
+<html lang="en">
+
+{# <head> holds settings about the page. Nothing in it appears on the page itself. #}
+<head>
+  {# The character set. utf-8 covers every language and symbol. #}
+  <meta charset="utf-8">
+  {# The text shown on the browser tab. #}
+  <title>Metropolis: Einstein solid</title>
+
+  {# <style> holds CSS: rules for how things look.
+     Each rule reads:  what it applies to { property: value; }  #}
+  <style>
+    /* The whole page: a plain font, at most 780 pixels wide, with 40 pixels
+       of space above and below, and centred left-to-right ("auto"). */
+    body  { font-family: sans-serif; max-width: 780px; margin: 40px auto; }
+
+    /* Each form label on a line of its own, with some space above it. */
+    label { display: block; margin-top: 12px; }
+
+    /* Table cells (td) and table headings (th): space inside, text on the left. */
+    td, th { padding: 4px 12px; text-align: left; }
+
+    /* Anything marked class="error": dark red text. */
+    .error { color: #b00020; }
+
+    /* Pictures (the plots) are never wider than the page. */
+    img   { max-width: 100%; }
+  </style>
+</head>
+
+{# <body> holds everything that is visible on the page. #}
+<body>
+
+  {# <h1> is the main heading. <h2> and <h3> are smaller headings. #}
+  <h1>Metropolis simulation of an Einstein solid</h1>
+
+  {# <p> is a paragraph of text. #}
+  <p>A macrostate of the solid is two numbers: the number of particles N and the
+     total number of energy units q. Choose the starting macrostates and the heat
+     bath, and see which of them decides the result.</p>
+
+  {# ===================== THE FORM =====================
+     Everything between <form> and </form> is sent together when the button
+     is pressed. method="post" sends it as a POST request to the same
+     address, which is what index() in app.py checks for. #}
+  <form method="post">
+
+    <h2>Starting macrostates</h2>
+
+    {# A <label> ties a piece of text to the input box inside it.
+       {{ "{:,}".format(max_n) }} prints the limit with thousands commas: 1,000. #}
+    <label>Number of particles N (up to {{ "{:,}".format(max_n) }})
+      {# <input> is a text box.
+         name="n"  : the name under which app.py finds the typed text
+                     (request.form.get("n")).
+         value=... : the text shown in the box when the page loads. app.py
+                     passes back what was typed, so the box keeps its content
+                     after pressing Run. #}
+      <input name="n" value="{{ form.n }}">
+    </label>
+
+    {# The list of starting totals, for example: 0, 266, 1000.
+       size="30" makes this box wider, since it holds several numbers. #}
+    <label>Starting total energies q, separated by commas (up to {{ max_starts }} values, each up to {{ "{:,}".format(max_q) }})
+      <input name="q_totals" value="{{ form.q_totals }}" size="30">
+    </label>
+
+    <h2>Heat bath and run</h2>
+
+    {# The temperature of the heat bath. #}
+    <label>Temperature theta
+      <input name="theta" value="{{ form.theta }}">
+    </label>
+
+    {# The number of Metropolis steps. #}
+    <label>Steps (up to {{ "{:,}".format(max_steps) }})
+      <input name="steps" value="{{ form.steps }}">
+    </label>
+
+    {# The seed of the random numbers. #}
+    <label>Random seed
+      <input name="seed" value="{{ form.seed }}">
+    </label>
+
+    {# The button. type="submit" means: pressing it sends the form. #}
+    <p><button type="submit">Run</button></p>
+  </form>
+
+  {# <small> is small print. A warning, so the wait is not a surprise. #}
+  <p><small>Each starting total is a separate simulation. 10,000,000 steps take a few seconds each.</small></p>
+
+  {# ===================== ERROR MESSAGE =====================
+     This paragraph is put on the page only if app.py set an error message.
+     class="error" gives it the red colour from the <style> above. #}
+  {% if error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+
+  {# ===================== RESULTS =====================
+     Everything from here to the matching endif is put on the page only if
+     there is a result, that is, after a successful run. #}
+  {% if result %}
+    <h2>Result for N = {{ result.n }}</h2>
+
+    {# ---------- The calculation ---------- #}
+    <h3>The calculation</h3>
+
+    {# <b> is bold text. #}
+    <p><b>Exact answer</b> (energy in whole units): N / (e^(1/theta) - 1)</p>
+
+    {# <ol> is a numbered list ("ordered list"); each <li> is one item.
+       The five items are the five steps of the formula, with this run's
+       numbers filled in.
+       "%g"|format(x)    prints x without useless zeros: 2.5, not 2.500000
+       "%.4g"|format(x)  prints x with 4 significant digits: 1.492
+       "%.1f"|format(x)  prints x with 1 digit after the point: 203.3 #}
+    <ol>
+      {# Step 1: divide 1 by theta. #}
+      <li>1 / theta = 1 / {{ "%g"|format(result.theta) }} = {{ "%.4g"|format(result.inv_theta) }}</li>
+      {# Step 2: e to the power of that. #}
+      <li>e^{{ "%.4g"|format(result.inv_theta) }} = {{ "%.4g"|format(result.exp_term) }}</li>
+      {# Step 3: subtract 1. (The subtraction is done right here in the template.) #}
+      <li>{{ "%.4g"|format(result.exp_term) }} - 1 = {{ "%.4g"|format(result.exp_term - 1) }}</li>
+      {# Step 4: 1 divided by that is the average energy of one particle. #}
+      <li>1 / {{ "%.4g"|format(result.exp_term - 1) }} = {{ "%.4g"|format(result.per_particle) }} units per particle</li>
+      {# Step 5: times the number of particles gives the total. #}
+      <li>{{ result.n }} particles x {{ "%.4g"|format(result.per_particle) }} = <b>{{ "%.1f"|format(result.exact) }}</b></li>
+    </ol>
+
+    {# Why the exact formula holds. #}
+    <p>Why: at temperature theta, each extra unit of energy is e^(-1/theta) times as likely
+       as the one before. Averaging over the energies 0, 1, 2, ... with these chances
+       gives 1 / (e^(1/theta) - 1) units per particle.</p>
+
+    {# The classical answer, with this run's numbers. #}
+    <p><b>Classical answer</b> (energy as a continuous amount): N x theta
+       = {{ result.n }} x {{ "%g"|format(result.theta) }} = <b>{{ "%.1f"|format(result.classical) }}</b></p>
+
+    {# Why the classical formula holds, and how far off it is here, in energy units. #}
+    <p>Why: if a particle could hold any amount of energy, its average would be exactly theta.
+       With whole units it can't hold a fraction of a unit, so the real average is lower.
+       Here the classical answer is too high by {{ "%.1f"|format(result.gap) }} units.
+       The gap shrinks as theta grows.</p>
+
+    {# ---------- The simulation table ---------- #}
+    <h3>The simulation</h3>
+    <p>One row per starting total q. The simulated values should land on the exact answer
+       ({{ "%.1f"|format(result.exact) }}), not the classical one.</p>
+
+    {# A table: <tr> is a row, <th> a heading cell, <td> an ordinary cell. #}
+    <table>
+      {# The first row: the column titles. #}
+      <tr><th>Starting total q</th><th>Simulated mean total</th><th>Simulated minus exact</th></tr>
+
+      {# A loop: the row between "for" and "endfor" is repeated once for each
+         run in result.runs, so the table gets one row per starting q. #}
+      {% for run in result.runs %}
+        <tr>
+          {# The total energy before the run. #}
+          <td>{{ run.start_total }}</td>
+          {# The simulated mean total energy, with 1 decimal. #}
+          <td>{{ "%.1f"|format(run.simulated) }}</td>
+          {# Simulated minus exact, in energy units. The + in "%+.1f" always
+             shows the sign: +0.7 or -0.1. #}
+          <td>{{ "%+.1f"|format(run.difference) }} units</td>
+        </tr>
+      {% endfor %}
+    </table>
+
+    {# ---------- The three lessons, each with a plot ---------- #}
+    <h2>What this run shows</h2>
+
+    {# ----- Lesson 1 ----- #}
+    <h3>1. The starting energy doesn't matter, but the number of steps does</h3>
+    <p>Each line is one starting total q. The lines begin far apart and are pulled toward the
+       exact answer: runs that start too high lose energy, and runs that start too low gain it.
+
+       {# The next sentence depends on what happened in this run. Exactly one
+          of the four branches is put on the page.
+          result.merged_at is the step from which all runs have the same
+          total energy, or None if that never happened. #}
+
+       {# Branch 1: only one starting total was given.
+          "|length" gives the number of items in the list. #}
+       {% if result.runs|length == 1 %}
+         Give two or more starting totals to compare them.
+
+       {# Branch 2: the runs never became identical. #}
+       {% elif result.merged_at is none %}
+         In this run the starts never became identical: {{ "{:,}".format(result.steps) }}
+         steps were not enough to forget the start. Try more steps.
+
+       {# Branch 3: they became identical, but only in the second half of the
+          run. The average is taken over that half, so it still contains some
+          memory of the start, and the means differ. #}
+       {% elif result.merged_at > result.steps / 2 %}
+         The starts became identical only around step {{ "{:,}".format(result.merged_at) }}, inside
+         the half that is averaged, so the means still differ. Try more steps.
+
+       {# Branch 4: the normal case. They became identical in the first half. #}
+       {% else %}
+         From about step {{ "{:,}".format(result.merged_at) }} on, all starts have exactly the same
+         total energy, so the start no longer matters. (They are exactly equal because they
+         use the same seed, and so the same random moves.)
+       {% endif %}
+    </p>
+    <p>This is why steps matter: a run that ends while the lines are still apart gives an
+       answer that depends on where it started.</p>
+
+    {# Plot 1. <img> shows a picture. Usually src="..." is the address of a
+       picture file. Here the picture itself is written into the page:
+         data:image/png;base64,   means "what follows is a PNG picture, as base64 text"
+         {{ result.plot_start }}  is that text, made by plot_start() in plots.py
+       alt="..." describes the picture, for screen readers and in case it
+       can't be displayed. #}
+    <img src="data:image/png;base64,{{ result.plot_start }}"
+         alt="Total energy against steps on a log scale, one line per starting q, converging on the exact answer">
+
+    {# ----- Lesson 2 ----- #}
+    <h3>2. After settling, the total energy fluctuates around the exact answer</h3>
+    <p>The same runs on an ordinary step axis, zoomed in on the settled part. The total energy
+       never stops moving: it keeps jumping up and down around the exact answer. The mean is
+       taken only over the second half (white background), after the start has been forgotten.
+       More steps average over more of these jumps, so the mean gets closer to the exact answer.</p>
+
+    {# Plot 2, made by plot_whole_run() in plots.py. #}
+    <img src="data:image/png;base64,{{ result.plot_whole }}"
+         alt="Total energy against steps for the whole run, fluctuating around the exact answer, with the classical answer above it">
+
+    {# ----- Lesson 3 ----- #}
+    <h3>3. Temperature and N do matter</h3>
+    <p>The curves are the two formulas for N = {{ result.n }}. The dots are this run's simulated
+       means at theta = {{ "%g"|format(result.theta) }}; when the starts agree, the dots sit on top
+       of each other. They should land on the exact curve, below the classical line. Run again
+       with another theta and the dots move along the curve. With another N, both formulas
+       scale in proportion to N.</p>
+
+    {# Plot 3, made by plot_theta() in plots.py. #}
+    <img src="data:image/png;base64,{{ result.plot_theta }}"
+         alt="Mean total energy against temperature: exact curve, classical line, and this run's simulated points">
+
+  {# The end of "if result". What follows is always shown. #}
+  {% endif %}
+
+  {# ===================== SUGGESTIONS =====================
+     <ul> is a list with bullet points ("unordered list"); each <li> is one item. #}
+  <h2>What to try</h2>
+  <ul>
+    <li>Change the starting totals q: with enough steps, the results stay the same. Each q is spread at random over the N particles.</li>
+    <li>Set steps to 1000: the lines in plot 1 never meet, and the results disagree.</li>
+    <li>Change theta or N: all results move together, and follow the exact answer.</li>
+    <li>Change the seed: the jumps in plot 2 change, and the results shift slightly, by the same amount for all rows.</li>
+  </ul>
+
+{# Close the body and the page. #}
+</body>
+</html>
