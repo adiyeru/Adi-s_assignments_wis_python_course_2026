@@ -178,30 +178,7 @@ The file is also named `metropolis.py` in lower case (it was uploaded as
 ## Prompt
 
 ```text
-here is my day03 project. pls give code to: Write a web application (e.g. using Flask) that will use the "business logic" from the previous implementation and provide a web interface to it.
+here is my day03 project. pls give code to: Write a web application (e.g. using Flask) 
 explain every row pls in comments in code and in here. update a day04 readme file.
 ```
 
-```text
-ok but i want people to see how insert diffrent steps and temperature changes results while starting energies dont
-```
-
-```text
-no i mean like in the last line here: [Hebrew lecture summary: a macrostate of an Einstein solid is defined by two numbers, the number of particles and the total number of energy units]
-```
-
-```text
-1+ let visitor define the fixed starts values
-```
-
-```text
-[quoting "The CSV row: when N is 100, the page also runs your day03 data from start_energies.csv as an extra row"] dont
-```
-
-```text
-[quoting "It calculates the exact answer, N / (e^(1/theta) - 1), and the classical answer, N x theta."] add the calculation and explain.
-```
-
-```text
-[quoting the "What the visitor learns from it" list and the description of the result table, with two pages of the course exercise attached: a plot of total energy against steps with the simulated and theoretical means] add it and show plot, not precent of all those comparisons similarly but more detailed than this
-```
