@@ -1,6 +1,7 @@
 /day03/people.csv
 /day03/bmi_calculator.py
 /day03/try.py
+.vscode
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

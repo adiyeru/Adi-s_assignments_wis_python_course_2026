@@ -195,7 +195,11 @@ def plot_theta(runs, n, theta):
     """Plot 3: mean total energy against temperature.
     Two curves from the formulas, plus this run's simulated results as dots."""
     fig, ax = new_figure(f"Mean total energy against temperature (N = {n})",
-                         "Temperature theta", "Mean total energy (units)")
+                         # The x-axis name, with theta's unit. Text between $...$ is drawn
+                         # as a formula: \theta is the Greek letter, k_B is k with a small B,
+                         # \varepsilon is epsilon. The r"..." keeps the backslashes as they are.
+                         r"Temperature $\theta = k_BT/\varepsilon$ (energy units)",
+                         "Mean total energy (units)")
 
     # How far the temperature axis goes: twice this run's theta, so that the
     # dots land in the middle, but at least up to 5.
