@@ -7,7 +7,14 @@
 # and returns that text. The page puts the text straight into the <img> tag.
 
 # Python's built-in modules.
-import base64   # turns raw bytes (the picture) into ordinary text characters
+import base64   
+# turns raw bytes (the picture) into ordinary text characters
+# A web page is text, but a PNG picture is binary data: 
+# raw bytes, many of which aren’t letters at all. 
+# To put the picture inside the page’s text, 
+# it has to be written with ordinary characters first. 
+# Base64 does that: it rewrites any bytes using only 64 safe 
+# characters (A–Z, a–z, 0–9, + and /).
 import io       # gives us a "file" that lives in memory instead of on disk
 import math     # for math.exp(x), which is e^x
 
