@@ -33,10 +33,6 @@ Then open http://127.0.0.1:5000 in a browser. Stop the server with Ctrl+C.
 ```text
 python -m pytest
 ```
-
-Add `-v` to see every test by name. Run it from inside the project folder:
-from a folder above it, pytest would also collect test files from other days.
-
 **The command-line version from day03** still works: `python Metropolis.py`.
 
 ---
@@ -116,9 +112,7 @@ Every run draws three plots. They are drawn with matplotlib in `plots.py`.
 - **matplotlib's `Figure` is used directly, not `pyplot`.** `pyplot` keeps
   hidden state between calls, which causes trouble inside a web server.
 - **About 800 points per run are plotted, not every step.** Drawing all 10
-  million steps would be far too slow. `record_points()` chooses 400 evenly
-  spaced steps, plus 400 packed near the start, where the energy changes
-  fastest.
+  million steps would be far too slow, using `record_points()` .
 
 The examples below come from a default run: N = 100, theta = 2.5, 10^6 steps,
 seed 0, starting totals 0, 266 and 1000. All three starts end at a mean of
@@ -126,7 +120,7 @@ seed 0, starting totals 0, 266 and 1000. All three starts end at a mean of
 
 **1. How each start is forgotten**
 
-![Total energy against steps on a log scale, one line per starting q, converging on the exact answer](images/plot1_start_forgotten.png)
+Total energy against steps on a log scale, one line per starting q, converging on the exact answer:
 
 Total energy against steps, with the steps on a **log scale**: each tick is 10
 times the one before, so the first few steps get as much room as the last few
@@ -145,7 +139,7 @@ too late for the means to agree.
 
 **2. The whole run**
 
-![Total energy against steps for the whole run, fluctuating around the exact answer, below the classical answer](images/plot2_whole_run.png)
+Total energy against steps for the whole run, fluctuating around the exact answer, below the classical answer:
 
 The same runs on an ordinary step axis, like the figure in the course
 exercise, with more on it. The total energy keeps fluctuating around the exact
@@ -160,7 +154,7 @@ written in full with commas (1,000,000, not 1e6).
 
 **3. Mean total energy against temperature**
 
-![Mean total energy against temperature: the exact curve, the classical line, and this run's simulated mean as a dot on the exact curve](images/plot3_temperature.png)
+Mean total energy against temperature: the exact curve, the classical line, and this run's simulated mean as a dot on the exact curve:
 
 The exact curve, N / (e^(1/theta) − 1), and the classical line, N × theta, for
 the chosen N, drawn at 200 temperatures from just above 0 up to twice this
@@ -216,6 +210,72 @@ hotter or larger system settles more slowly, so it needs more steps.
    Both come from `Metropolis.py`. The web code contains no physics of its own.
 5. `app.py` passes the results to `plots.py`, which draws the three plots.
 6. `app.py` fills `index.html` with the results and sends it to the browser.
+
+#### The Flask route: `@app.route`
+
+The decorator in `app.py` connects a web address to a Python function:
+
+```python
+@app.route("/", methods=["GET", "POST"])
+def index():
+```
+
+A **decorator** is Python syntax that adds behavior to a function. It starts
+with `@` and is written directly above the function. Conceptually,
+`@app.route(...)` is like calling:
+
+```python
+index = app.route("/", methods=["GET", "POST"])(index)
+```
+
+Python first creates the `index()` function and then passes that function to
+`app.route()`. Flask uses the decorator to register `index()` as the function
+that handles the home page. Later, when Flask receives a matching request, it
+calls `index()` and sends its returned HTML to the browser.
+
+`"/"` is the address of the home page. `methods=["GET", "POST"]` allows the
+page to handle both kinds of HTTP request. The decorator tells Flask to call
+`index()` whenever the browser requests `/`.
+
+#### GET
+
+GET requests the page. It is the request used when the browser opens
+`http://127.0.0.1:5000/` or refreshes the page. It does not contain form
+values, so `request.method == "POST"` is false:
+
+```python
+if request.method == "POST":
+```
+
+The result is therefore `None`, and `index.html` displays the form with the
+default values but no simulation results.
+
+#### POST
+
+POST sends data to the server. In `templates/index.html`, the form uses
+`method="post"`:
+
+```html
+<form method="post">
+```
+
+Pressing the Run button sends the five input values back to `/` as a POST
+request. Flask places those values in `request.form`, where each input is
+available by the name written in its HTML `name` attribute:
+
+```python
+form[name] = request.form.get(name, "")
+```
+
+For example, `<input name="n">` gives `request.form.get("n")`. Every form value
+starts as text, so `app.py` converts it to a number with `float()` or `int()`.
+The program then checks that the values are in the allowed ranges. If they are
+valid, it runs the simulation, creates the plots and sends the page with the
+results.
+
+Both GET and POST reach the same route and call the same `index()` function.
+The main difference is that GET asks only to display the page, while POST
+submits form values and asks the server to perform the simulation.
 
 Flask prints one line in the terminal for each request, for example
 `"GET / HTTP/1.1" 200` when the page is opened and `"POST / HTTP/1.1" 200`
